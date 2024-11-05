@@ -1,25 +1,67 @@
-import joblib
+
+
+import pickle
 import numpy as np
+from trian import testing_data
 
-def load_model(filepath):
-    """Load a saved model from file."""
-    return joblib.load(filepath)
+file = 'D:\\BeCode\\Projects\\immo-eliza-ml\\test_data.csv'
 
-def predict_price(model, features):
-    """Predict house price given a model and feature values."""
-    features_array = np.array(features).reshape(1, -1)  # Reshape for a single sample
-    return model.predict(features_array)[0]
-
-if __name__ == "__main__":
-    # Load the saved model
-    model = load_model('house_price_model.pkl')
-    print("Model loaded from house_price_model.pkl")
-
-    # Define features for a new house (replace with actual feature names and values)
-    features = [120, 3, 2, 1, 10]  # Example: [area, bedrooms, bathrooms, garages, age]
+def predict_price(input_data):
+    # Load the trained model
+    with open('model.pkl', 'rb') as file:
+        model = pickle.load(file)
     
-    # Predict price
-    predicted_price = predict_price(model, features)
-    print(f"Predicted house price: {predicted_price}")
+   
+if __name__ == "__main__":
+    # Example input data for a new house
+    input_data = {
+        'construction_year': 1999,
+        'nbr_bedrooms': 3,  
+        'total_area_sqm': 850,
+        'terrace_sqm': 20  
+    }
+    
+    # Predict the price
+    predicted_price = testing_data(file)
+    print(f"Predicted Price for the House: €{predicted_price}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

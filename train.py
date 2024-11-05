@@ -6,7 +6,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from matplotlib import pyplot as plt
 
 
@@ -44,9 +44,9 @@ clean_data(file_path)
 
 
 
-
-def data_preprocessing():
-    df = pd.read_csv('D:\\BeCode\\Projects\\immo-eliza-ml\\output_file.csv')
+file = 'D:\\BeCode\\Projects\\immo-eliza-ml\\output_file.csv'
+def data_preprocessing(file):
+    df = pd.read_csv(file)
     numeric_features = df.select_dtypes(include=['int64', 'float64']).columns
     # Impute missing values for numerical columns
     numeric_imputer = SimpleImputer(strategy='median')
@@ -73,13 +73,19 @@ def data_preprocessing():
     imputed_file_path = 'properties_imputed.csv'
     df.to_csv(imputed_file_path, index=False)
     print("Preprocessing  file is created")
+
+    # Split the dataset to train and test
+    df.sample(frac =0.8).to_csv('train_data.csv', index=False)
+    df.sample(frac=0.2).to_csv('test_data.csv', index=False)
     
 
-data_preprocessing()
+data_preprocessing(file)
 
 
-def training_data():
-    df= pd.read_csv('D:\\BeCode\\Projects\\immo-eliza-ml\\properties_imputed.csv')
+
+file = 'D:\\BeCode\\Projects\\immo-eliza-ml\\train_data.csv'
+def training_data(file):
+    df= pd.read_csv(file)
     X= df.drop(['price'],axis = 1)
     y= df['price']
     X_train, X_test, y_train, y_test= train_test_split(X,y,test_size= 0.2, random_state= 42)
@@ -88,12 +94,11 @@ def training_data():
     X_train = pd.get_dummies(X_train, columns=categorical_features)
     X_test = pd.get_dummies(X_test, columns=categorical_features)
     
-    # Align columns to make sure both train and test data have the same structure
-    X_train, X_test = X_train.align(X_test, join='left', axis=1, fill_value=0)
-    
     # Define and train the model
     model = RandomForestRegressor(n_estimators=100, max_depth=15, random_state=42)
     model.fit(X_train, y_train)
+    train_score = model.score(X_train, y_train)
+    print("Train Score :", train_score)
 
     # Pickle the model
     with open('model.pkl', 'wb') as file: #writing bina file for module
@@ -102,47 +107,40 @@ def training_data():
 
     print("Pickle file is created")
 
+ # Call the function 
+training_data(file)
 
-training_data()
 
-def testing_data():
-    df= pd.read_csv('D:\\BeCode\\Projects\\immo-eliza-ml\\properties_imputed.csv')
-    df.head(20)
+
+file = 'D:\\BeCode\\Projects\\immo-eliza-ml\\test_data.csv'
+def testing_data(file):
+    df= pd.read_csv(file)
     X= df.drop(['price'],axis = 1)
     y= df['price']
-    X_train, X_test, y_train, y_test= train_test_split(X,y,test_size= 0.2, random_state= 42)
+    _, X_test, _, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    #Load the trained model
+    with open('model.pkl', 'rb') as file:
+        model = pickle.load(file)
+    
     # Identify categorical features and one-hot encode them
-    categorical_features = X_train.select_dtypes(include=['object']).columns
-    X_train = pd.get_dummies(X_train, columns=categorical_features)
+    categorical_features = X_test.select_dtypes(include=['object']).columns
     X_test = pd.get_dummies(X_test, columns=categorical_features)
     
-    # Align columns to make sure both train and test data have the same structure
-    X_train, X_test = X_train.align(X_test, join='left', axis=1, fill_value=0)
+    # Make predictions on the test data
+    y_pred = model.predict(X_test)
     
-    # Define and train the model
-    model = RandomForestRegressor(n_estimators=100, max_depth=15, random_state=42)
-    model.fit(X_train, y_train)
-
-    # Pickle the model
-    with open('model.pkl', 'wb') as file: #writing bina file for module
-        pickle.dump(model, file)
-
-
-    print("Pickle file is created")
-
-
-testing_data()
-
-
-
-# importing pandas package 
-import pandas as pd 
-  
-# making data frame from csv file  
-data = pd.read_csv("D:\\BeCode\\Projects\\immo-eliza-ml\\properties_imputed.csv") 
-  
-# generating one row  
-rows = data.sample(frac =.08)
+    # Evaluate the model
+    mae = mean_absolute_error(y_test, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+    
+    print("Model Evaluation on Test Data:")
+    print(f"Mean Absolute Error (MAE): {mae}")
+    print(f"Mean Squared Error (MSE): {mse}")
+    print(f"R-squared (R2): {r2}")
+    return y_pred
+    
 
 
 
@@ -164,50 +162,9 @@ rows = data.sample(frac =.08)
 
 
 
-'''
-
-
-
-def standardize(file_path, df):
-    df_features = df.drop(columns=['price'])
-    columns = df_features.columns
-    # Initialize the scaler
-    scaler = StandardScaler()
-    # Apply the scaler to the numeric features
-    df[columns] = scaler.fit_transform(df[columns])
-    print(df.head())
-
-
-def preprocess_data():
-    imputed_columns()
-    encoding_columns()
-    standardize()
 
 
 
 
-def split_data(data, target_column, test_size=0.2, random_state=42):
-    """Split data into train and test sets."""
-    X = data.drop(columns=[target_column])
-    y = data[target_column]
-    return train_test_split(X, y, test_size=test_size, random_state=random_state)
 
 
-def train_model(X_train, y_train):
-    """Train a regression model."""
-    model = RandomForestRegressor()
-    model.fit(X_train, y_train)
-    return model
-
-
-def evaluate_model(model, X_test, y_test):
-    """Evaluate the model and return RMSE."""
-    predictions = model.predict(X_test)
-    rmse = np.sqrt(mean_squared_error(y_test, predictions))
-    return rmse
-
-def save_model(model, filepath):
-    """Save the trained model to a file."""
-    joblib.dump(model, filepath)
-
-'''
